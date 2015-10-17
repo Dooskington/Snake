@@ -13,10 +13,10 @@ Game::Game() :
     m_windowWidth(640),
     m_windowHeight(480),
     m_cellSize(16),
-    m_snakeUpdateTime(200),
-    m_snakeSpeed(1),
     m_window(nullptr),
-    m_renderer(nullptr)
+    m_renderer(nullptr),
+    m_snakeSpeed(1),
+    m_snakeUpdateTime(500)
 {
 
 }
@@ -27,6 +27,12 @@ void Game::Start()
     if(SDL_Init(SDL_INIT_VIDEO) < 0)
     {
         std::cerr << "SDL could not initialize! SDL error: " << SDL_GetError() << std::endl;
+    }
+
+    // Initialize SDL_ttf
+    if(TTF_Init() < 0)
+    {
+        std::cout << "SDL_ttf could not be initialized! SDL_ttf error: " << TTF_GetError() << std::endl;
     }
 
     // Create window
@@ -43,12 +49,20 @@ void Game::Start()
         std::cerr << "Renderer could not be created! SDL error: " << SDL_GetError() << std::endl;
     }
 
-    // Initial snake
+    // Create the score text
+    SDL_Color color = { 0, 255, 0, 255 };
+    m_score = RenderText("0000000", "res/dos.ttf", color, 22);
+
+    // Create the snake
     int startLength = 3;
     for(int i = 0; i < startLength; i++)
     {
         Grow();
     }
+
+    // Create the food
+    m_food = std::make_unique<Food>();
+    ResetFood();
 
     // Game loop
     SDL_Event event;
@@ -151,13 +165,25 @@ void Game::Render()
     SDL_SetRenderDrawColor(m_renderer, 0, 0, 0, 255);
     SDL_RenderClear(m_renderer);
 
+    // Render food
+    SDL_Rect foodRect = {m_food->m_x * m_cellSize + 4, m_food->m_y * m_cellSize + 4, 8, 8};
+    SDL_SetRenderDrawColor(m_renderer, 0, 255, 0, 255);
+    SDL_RenderDrawRect(m_renderer, &foodRect);
+
     // Render all snake segments
     for(std::vector< std::unique_ptr<SnakeSegment> >::iterator it = m_snakeSegments.begin(); it != m_snakeSegments.end(); it++)
     {
         SDL_Rect snakeRect = {(*it)->m_x * m_cellSize, (*it)->m_y * m_cellSize, 16, 16};
-        SDL_SetRenderDrawColor(m_renderer, 0, 255, 0, 255);
+        SDL_SetRenderDrawColor(m_renderer, 0, 200, 0, 255);
         SDL_RenderDrawRect(m_renderer, &snakeRect);
     }
+
+    // Render score text
+    // Set rendering space and render to screen
+    int w, h;
+    SDL_QueryTexture(m_score, NULL, NULL, &w, &h);
+    SDL_Rect textRect = {(m_windowWidth / 2) - (w / 2), 8, w, h};
+    SDL_RenderCopy(m_renderer, m_score, NULL, &textRect);
 
     // Update window
     SDL_RenderPresent(m_renderer);
@@ -211,7 +237,7 @@ void Game::UpdateSnake()
 
 void Game::CheckCollision()
 {
-    // Check and see if the head ran into anything
+    // Check and see if the head ran into any body parts
     std::vector< std::unique_ptr<SnakeSegment> >::const_iterator head = m_snakeSegments.begin();
     for(std::vector< std::unique_ptr<SnakeSegment> >::const_iterator it = head + 1; it != m_snakeSegments.end(); it++)
     {
@@ -221,19 +247,62 @@ void Game::CheckCollision()
             // The snake ran into itself. Game over.
             m_isRunning = false;
         }
-
-        // If the head runs into the left and right walls
-        if((*head)->m_x <= 0 || (*head)->m_x >= (m_windowWidth / m_cellSize))
-        {
-            // The snake ran into itself. Game over.
-            m_isRunning = false;
-        }
-
-        // If the head runs into the top and bottom walls
-        if((*head)->m_y <= 0 || (*head)->m_y >= (m_windowHeight / m_cellSize))
-        {
-            // The snake ran into itself. Game over.
-            m_isRunning = false;
-        }
     }
+
+    // If the head runs into the the edges
+    if((*head)->m_x <= 0 || (*head)->m_x >= (m_windowWidth / m_cellSize))
+    {
+        // The snake ran into the wall. Game over.
+        m_isRunning = false;
+    }
+    else if ((*head)->m_y <= 0 || (*head)->m_y >= (m_windowHeight / m_cellSize))
+    {
+        // The snake ran into the wall. Game over.
+        m_isRunning = false;
+    }
+
+    // If the head runs into any food
+    if((*head)->m_x == m_food->m_x && (*head)->m_y == m_food->m_y)
+    {
+        ResetFood();
+        Grow();
+    }
+}
+
+void Game::ResetFood()
+{
+    // Puts the food at a random position anywhere on the map, with 1 cell padding around the borders
+    m_food->m_x = std::rand() % ((m_windowWidth / m_cellSize) - 2) + 1;
+    m_food->m_y = std::rand() % ((m_windowHeight / m_cellSize) - 2) + 1;
+}
+
+SDL_Texture* Game::RenderText(const std::string& message, const std::string& path, SDL_Color color, int size)
+{
+    SDL_Texture* texture;
+
+    // Open the font
+    TTF_Font* font = TTF_OpenFont(path.c_str(), size);
+    if(font == nullptr)
+    {
+        std::cout << "Failed to load font! SDL_ttf error: " << TTF_GetError() << std::endl;
+    }
+
+    // Render the text onto a surface, then load that surface into a texture.
+    SDL_Surface* surface = TTF_RenderText_Solid(font, message.c_str(), color);
+    if(surface == nullptr)
+    {
+        TTF_CloseFont(font);
+        std::cout << "Failed to render font to surface! SDL_ttf error: " << TTF_GetError() << std::endl;
+    }
+
+    texture = SDL_CreateTextureFromSurface(m_renderer, surface);
+    if(texture == nullptr)
+    {
+        std::cout << "Failed to create texture from surface! SDL error: " << SDL_GetError() << std::endl;
+    }
+
+    SDL_FreeSurface(surface);
+    TTF_CloseFont(font);
+
+    return texture;
 }

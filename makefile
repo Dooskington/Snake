@@ -8,7 +8,7 @@ CC = g++
 SRC_PATH = src
 BIN_PATH = bin
 FRAMEWORK_PATH = /Library/Frameworks
-FRAMEWORKS = -framework SDL2
+FRAMEWORKS = -framework SDL2 -framework SDL2_ttf
 BIN_NAME = snake
 C_FLAGS = -Wall -std=c++14
 SRC_FILES := $(wildcard $(SRC_PATH)/*.cpp)
@@ -19,6 +19,7 @@ all: debug
 
 # Build the project and package it into an app bundle
 release: clean build
+	# Does nothing currently
 	@echo "*** Release build complete ***"
 
 # Build the project and run it through the terminal

@@ -8,6 +8,8 @@
 
 int main(int argc, char** argv)
 {
+    std::srand((unsigned int)std::time(NULL));
+
     Game game;
     game.Start();
 
