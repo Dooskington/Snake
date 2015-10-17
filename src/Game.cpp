@@ -15,6 +15,8 @@ Game::Game() :
     m_cellSize(16),
     m_window(nullptr),
     m_renderer(nullptr),
+    m_scoreText(nullptr),
+    m_score(0),
     m_snakeSpeed(1),
     m_snakeUpdateTime(500)
 {
@@ -48,10 +50,6 @@ void Game::Start()
     {
         std::cerr << "Renderer could not be created! SDL error: " << SDL_GetError() << std::endl;
     }
-
-    // Create the score text
-    SDL_Color color = { 0, 255, 0, 255 };
-    m_score = RenderText("0000000", "res/dos.ttf", color, 22);
 
     // Create the snake
     int startLength = 3;
@@ -169,23 +167,26 @@ void Game::Render()
     SDL_Rect foodRect = {m_food->m_x * m_cellSize + 4, m_food->m_y * m_cellSize + 4, 8, 8};
     SDL_SetRenderDrawColor(m_renderer, 0, 255, 0, 255);
     SDL_RenderFillRect(m_renderer, &foodRect);
-    //SDL_RenderDrawRect(m_renderer, &foodRect);
 
     // Render all snake segments
-    for(std::vector< std::unique_ptr<SnakeSegment> >::iterator it = m_snakeSegments.begin(); it != m_snakeSegments.end(); it++)
+    for(std::vector< std::unique_ptr<SnakeSegment> >::const_iterator it = m_snakeSegments.begin(); it != m_snakeSegments.end(); it++)
     {
         SDL_Rect snakeRect = {(*it)->m_x * m_cellSize, (*it)->m_y * m_cellSize, 16, 16};
         SDL_SetRenderDrawColor(m_renderer, 0, 255, 0, 255);
         SDL_RenderFillRect(m_renderer, &snakeRect);
-        //SDL_RenderDrawRect(m_renderer, &snakeRect);
     }
 
     // Render score text
     // Set rendering space and render to screen
+    scoreString.str("");
+    scoreString << std::right << m_score;
+    SDL_Color color = { 0, 255, 0, 255 };
+    m_scoreText = CreateText(scoreString.str().c_str(), "res/dos.ttf", color, 22);
+
     int w, h;
-    SDL_QueryTexture(m_score, NULL, NULL, &w, &h);
+    SDL_QueryTexture(m_scoreText, NULL, NULL, &w, &h);
     SDL_Rect textRect = {(m_windowWidth / 2) - (w / 2), 8, w, h};
-    SDL_RenderCopy(m_renderer, m_score, NULL, &textRect);
+    SDL_RenderCopy(m_renderer, m_scoreText, NULL, &textRect);
 
     // Update window
     SDL_RenderPresent(m_renderer);
@@ -196,6 +197,10 @@ void Game::Stop()
     // Free snake
     m_snakeSegments.clear();
 
+    // Free textures
+    SDL_DestroyTexture(m_scoreText);
+    m_scoreText = nullptr;
+
     // Free SDL resources
     SDL_DestroyRenderer(m_renderer);
     SDL_DestroyWindow(m_window);
@@ -203,28 +208,6 @@ void Game::Stop()
     m_renderer = nullptr;
 
     SDL_Quit();
-}
-
-void Game::Grow()
-{
-    // Allocate a new snake segment and add it to the end of the snake
-    std::unique_ptr<SnakeSegment> seg(new SnakeSegment());
-    if(m_snakeSegments.size() > 0)
-    {
-        // Start it at the position of the head
-        seg->m_x = m_snakeSegments[0]->m_x;
-        seg->m_y = m_snakeSegments[0]->m_y;
-    }
-    else
-    {
-        // This is the head; start it at the center.
-        seg->m_x = (m_windowWidth / m_cellSize) / 2;
-        seg->m_y = (m_windowHeight / m_cellSize) / 2;
-    }
-    m_snakeSegments.push_back(std::move(seg));
-
-    // Speed up the snake
-    m_snakeSpeed++;
 }
 
 void Game::UpdateSnake()
@@ -266,9 +249,15 @@ void Game::CheckCollision()
     // If the head runs into any food
     if((*head)->m_x == m_food->m_x && (*head)->m_y == m_food->m_y)
     {
-        ResetFood();
-        Grow();
+        EatFood();
     }
+}
+
+void Game::EatFood()
+{
+    m_score += 100;
+    ResetFood();
+    Grow();
 }
 
 void Game::ResetFood()
@@ -278,7 +267,29 @@ void Game::ResetFood()
     m_food->m_y = std::rand() % ((m_windowHeight / m_cellSize) - 2) + 1;
 }
 
-SDL_Texture* Game::RenderText(const std::string& message, const std::string& path, SDL_Color color, int size)
+void Game::Grow()
+{
+    // Allocate a new snake segment and add it to the end of the snake
+    std::unique_ptr<SnakeSegment> seg(new SnakeSegment());
+    if(m_snakeSegments.size() > 0)
+    {
+        // Start it at the position of the head
+        seg->m_x = m_snakeSegments[0]->m_x;
+        seg->m_y = m_snakeSegments[0]->m_y;
+    }
+    else
+    {
+        // This is the head; start it at the center.
+        seg->m_x = (m_windowWidth / m_cellSize) / 2;
+        seg->m_y = (m_windowHeight / m_cellSize) / 2;
+    }
+    m_snakeSegments.push_back(std::move(seg));
+
+    // Speed up the snake
+    m_snakeSpeed++;
+}
+
+SDL_Texture* Game::CreateText(const std::string& message, const std::string& path, SDL_Color color, int size)
 {
     SDL_Texture* texture;
 

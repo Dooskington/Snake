@@ -36,12 +36,13 @@ class Game
         void Render();
         void Stop();
 
-        void Grow();
         void UpdateSnake();
         void CheckCollision();
+        void EatFood();
         void ResetFood();
+        void Grow();
 
-        SDL_Texture* RenderText(const std::string& message, const std::string& path, SDL_Color color, int size);
+        SDL_Texture* CreateText(const std::string& message, const std::string& path, SDL_Color color, int size);
 
         enum Direction {NONE, NORTH, SOUTH, EAST, WEST};
 
@@ -53,7 +54,9 @@ class Game
         const int m_cellSize;
         SDL_Window* m_window;
         SDL_Renderer* m_renderer;
-        SDL_Texture* m_score;
+        SDL_Texture* m_scoreText;
+        int m_score;
+        std::stringstream scoreString;
 
         // Snake
         std::vector< std::unique_ptr<SnakeSegment> > m_snakeSegments;
