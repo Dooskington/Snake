@@ -7,6 +7,7 @@
 #pragma once
 
 #include <iostream>
+#include <fstream>
 #include <vector>
 #include <memory>
 #include <string>
@@ -44,6 +45,8 @@ class Game
         void ResetFood();
         void Grow(int amount);
         void GameOver();
+        void LoadHighScore();
+        void SaveHighScore();
 
         SDL_Texture* CreateText(const std::string& message, const std::string& path, SDL_Color color, int size);
 
@@ -58,10 +61,17 @@ class Game
         SDL_Window* m_window;
         SDL_Renderer* m_renderer;
         SDL_Texture* m_scoreText;
+        SDL_Texture* m_highScoreText;
+        SDL_Texture* m_gameOverText;
+        SDL_Texture* m_highScoreLabelText;
+        SDL_Texture* m_scoreLabelText;
+        SDL_Texture* m_newHighScoreLabelText;
         Mix_Chunk* m_eatSound;
         Mix_Chunk* m_dieSound;
         int m_score;
+        int m_highScore;
         std::stringstream scoreString;
+        bool m_gameOver;
 
         // Snake
         std::vector< std::unique_ptr<SnakeSegment> > m_snakeSegments;

@@ -16,8 +16,15 @@ Game::Game() :
     m_window(nullptr),
     m_renderer(nullptr),
     m_scoreText(nullptr),
+    m_highScoreText(nullptr),
+    m_gameOverText(nullptr),
+    m_highScoreLabelText(nullptr),
+    m_scoreLabelText(nullptr),
+    m_newHighScoreLabelText(nullptr),
     m_eatSound(nullptr),
     m_score(0),
+    m_highScore(0),
+    m_gameOver(false),
     m_snakeSpeed(3),
     m_snakeUpdateTime(300)
 {
@@ -77,6 +84,9 @@ void Game::Start()
     m_food = std::make_unique<Food>();
     ResetFood();
 
+    // Get the high score
+    LoadHighScore();
+
     // Game loop
     SDL_Event event;
     while(m_isRunning)
@@ -99,109 +109,191 @@ void Game::Start()
 
 void Game::Update()
 {
-    // Snake input
-    const Uint8* currentKeyStates = SDL_GetKeyboardState(NULL);
-    if(currentKeyStates[SDL_SCANCODE_W] || currentKeyStates[SDL_SCANCODE_UP])
+    if(!m_gameOver)
     {
-        if(m_dir != SOUTH)
+        // Snake input
+        const Uint8* currentKeyStates = SDL_GetKeyboardState(NULL);
+        if(currentKeyStates[SDL_SCANCODE_W] || currentKeyStates[SDL_SCANCODE_UP])
         {
-            m_dir = NORTH;
+            if(m_dir != SOUTH)
+            {
+                m_dir = NORTH;
+            }
+        }
+        else if(currentKeyStates[SDL_SCANCODE_A] || currentKeyStates[SDL_SCANCODE_LEFT])
+        {
+            if(m_dir != EAST)
+            {
+                m_dir = WEST;
+            }
+        }
+        else if(currentKeyStates[SDL_SCANCODE_S] || currentKeyStates[SDL_SCANCODE_DOWN])
+        {
+            if(m_dir != NORTH)
+            {
+                m_dir = SOUTH;
+            }
+        }
+        else if(currentKeyStates[SDL_SCANCODE_D] || currentKeyStates[SDL_SCANCODE_RIGHT])
+        {
+            if(m_dir != WEST)
+            {
+                m_dir = EAST;
+            }
+        }
+
+        // Move snake at an interval
+        Uint32 currentTime = SDL_GetTicks();
+        if((currentTime - m_lastMoveTime) > m_snakeUpdateTime / m_snakeSpeed)
+        {
+            UpdateSnake();
+
+            switch (m_dir)
+            {
+                case NORTH:
+                    m_snakeSegments[0]->m_y -= 1;
+                    break;
+
+                case SOUTH:
+                    m_snakeSegments[0]->m_y += 1;
+                    break;
+
+                case EAST:
+                    m_snakeSegments[0]->m_x += 1;
+                    break;
+
+                case WEST:
+                    m_snakeSegments[0]->m_x -= 1;
+                    break;
+
+                case NONE:
+                    break;
+
+                default:
+                    break;
+            }
+
+            // If we are moving
+            if(m_dir != NONE)
+            {
+                CheckCollision();
+            }
+
+            m_lastMoveTime = SDL_GetTicks();
         }
     }
-    else if(currentKeyStates[SDL_SCANCODE_A] || currentKeyStates[SDL_SCANCODE_LEFT])
+    else
     {
-        if(m_dir != EAST)
-        {
-            m_dir = WEST;
-        }
+
     }
-    else if(currentKeyStates[SDL_SCANCODE_S] || currentKeyStates[SDL_SCANCODE_DOWN])
-    {
-        if(m_dir != NORTH)
-        {
-            m_dir = SOUTH;
-        }
-    }
-    else if(currentKeyStates[SDL_SCANCODE_D] || currentKeyStates[SDL_SCANCODE_RIGHT])
-    {
-        if(m_dir != WEST)
-        {
-            m_dir = EAST;
-        }
-    }
-
-    // Move snake at an interval
-    Uint32 currentTime = SDL_GetTicks();
-    if((currentTime - m_lastMoveTime) > m_snakeUpdateTime / m_snakeSpeed)
-    {
-        UpdateSnake();
-
-        switch (m_dir)
-        {
-            case NORTH:
-                m_snakeSegments[0]->m_y -= 1;
-                break;
-
-            case SOUTH:
-                m_snakeSegments[0]->m_y += 1;
-                break;
-
-            case EAST:
-                m_snakeSegments[0]->m_x += 1;
-                break;
-
-            case WEST:
-                m_snakeSegments[0]->m_x -= 1;
-                break;
-
-            case NONE:
-                break;
-
-            default:
-                break;
-        }
-
-        // If we are moving
-        if(m_dir != NONE)
-        {
-            CheckCollision();
-        }
-
-        m_lastMoveTime = SDL_GetTicks();
-    }
-
 }
 
 void Game::Render()
 {
+    Uint32 currentTime = SDL_GetTicks();
+
     // Clear window
     SDL_SetRenderDrawColor(m_renderer, 0, 0, 0, 255);
     SDL_RenderClear(m_renderer);
 
-    // Render food
-    SDL_Rect foodRect = {m_food->m_x * m_cellSize + 4, m_food->m_y * m_cellSize + 4, 8, 8};
-    SDL_SetRenderDrawColor(m_renderer, 0, 255, 0, 255);
-    SDL_RenderFillRect(m_renderer, &foodRect);
-
-    // Render all snake segments
-    for(std::vector< std::unique_ptr<SnakeSegment> >::const_iterator it = m_snakeSegments.begin(); it != m_snakeSegments.end(); it++)
+    if(!m_gameOver)
     {
-        SDL_Rect snakeRect = {(*it)->m_x * m_cellSize, (*it)->m_y * m_cellSize, 16, 16};
+        // Render food
+        SDL_Rect foodRect = {m_food->m_x * m_cellSize + 4, m_food->m_y * m_cellSize + 4, 8, 8};
         SDL_SetRenderDrawColor(m_renderer, 0, 255, 0, 255);
-        SDL_RenderFillRect(m_renderer, &snakeRect);
+        SDL_RenderFillRect(m_renderer, &foodRect);
+
+        // Render all snake segments
+        for(std::vector< std::unique_ptr<SnakeSegment> >::const_iterator it = m_snakeSegments.begin(); it != m_snakeSegments.end(); it++)
+        {
+            SDL_Rect snakeRect = {(*it)->m_x * m_cellSize, (*it)->m_y * m_cellSize, 16, 16};
+            SDL_SetRenderDrawColor(m_renderer, 0, 255, 0, 255);
+            SDL_RenderFillRect(m_renderer, &snakeRect);
+        }
+
+        // Render score text
+        // Set rendering space and render to screen
+        scoreString.str("");
+        scoreString << m_score;
+        SDL_Color color = { 0, 255, 0, 255 };
+        m_scoreText = CreateText(scoreString.str().c_str(), "res/dos.ttf", color, 22);
+
+        int w, h;
+        SDL_QueryTexture(m_scoreText, NULL, NULL, &w, &h);
+        SDL_Rect textRect = {(m_windowWidth / 2) - (w / 2), 8, w, h};
+        SDL_RenderCopy(m_renderer, m_scoreText, NULL, &textRect);
     }
+    else
+    {
+        // TODO Fix this awfulness.
+        // Currently this just loads the font every frame and generates
+        // textures every frame. This is extremely dumb and inefficient
 
-    // Render score text
-    // Set rendering space and render to screen
-    scoreString.str("");
-    scoreString << std::right << m_score;
-    SDL_Color color = { 0, 255, 0, 255 };
-    m_scoreText = CreateText(scoreString.str().c_str(), "res/dos.ttf", color, 22);
+        // Render game over window
+        SDL_Color color = { 0, 255, 0, 255 };
 
-    int w, h;
-    SDL_QueryTexture(m_scoreText, NULL, NULL, &w, &h);
-    SDL_Rect textRect = {(m_windowWidth / 2) - (w / 2), 8, w, h};
-    SDL_RenderCopy(m_renderer, m_scoreText, NULL, &textRect);
+        m_gameOverText = CreateText("Game Over", "res/dos.ttf", color, 32);
+        m_scoreLabelText = CreateText("Score", "res/dos.ttf", color, 22);
+        m_highScoreLabelText = CreateText("High Score", "res/dos.ttf", color, 22);
+        m_newHighScoreLabelText = CreateText("New High Score!", "res/dos.ttf", color, 40);
+
+        scoreString.str("");
+        scoreString << m_score;
+        m_scoreText = CreateText(scoreString.str().c_str(), "res/dos.ttf", color, 40);
+
+        scoreString.str("");
+        scoreString << m_highScore;
+        m_highScoreText = CreateText(scoreString.str().c_str(), "res/dos.ttf", color, 40);
+
+        int w, h;
+
+        // Game over text
+        SDL_QueryTexture(m_gameOverText, NULL, NULL, &w, &h);
+        SDL_Rect textRect = {(m_windowWidth / 2) - (w / 2), 8, w, h};
+        SDL_RenderCopy(m_renderer, m_gameOverText, NULL, &textRect);
+
+        // New high score label text
+        // TODO Fix this awful hacky flashing code
+        static Uint32 lastFlash = 0;
+        static bool flash = false;
+        if(m_score > m_highScore)
+        {
+            if((currentTime - lastFlash) > 500)
+            {
+                flash = !flash;
+                lastFlash = SDL_GetTicks();
+            }
+
+            if(flash)
+            {
+                SDL_QueryTexture(m_newHighScoreLabelText, NULL, NULL, &w, &h);
+                textRect = {(m_windowWidth / 2) - (w / 2), (m_windowHeight / 2), w, h};
+                SDL_RenderCopy(m_renderer, m_newHighScoreLabelText, NULL, &textRect);
+            }
+        }
+        else
+        {
+            // High score label text
+            SDL_QueryTexture(m_highScoreLabelText, NULL, NULL, &w, &h);
+            textRect = {(m_windowWidth / 2) - (w / 2), (m_windowHeight / 2), w, h};
+            SDL_RenderCopy(m_renderer, m_highScoreLabelText, NULL, &textRect);
+
+            // High Score text
+            SDL_QueryTexture(m_highScoreText, NULL, NULL, &w, &h);
+            textRect = {(m_windowWidth / 2) - (w / 2), (m_windowHeight / 2) + (h), w, h};
+            SDL_RenderCopy(m_renderer, m_highScoreText, NULL, &textRect);
+        }
+
+        // Score label text
+        SDL_QueryTexture(m_scoreLabelText, NULL, NULL, &w, &h);
+        textRect = {(m_windowWidth / 2) - (w / 2), (m_windowHeight / 2) - (h * 5), w, h};
+        SDL_RenderCopy(m_renderer, m_scoreLabelText, NULL, &textRect);
+
+        // Score text
+        SDL_QueryTexture(m_scoreText, NULL, NULL, &w, &h);
+        textRect = {(m_windowWidth / 2) - (w / 2), (m_windowHeight / 2) - (h * 2), w, h};
+        SDL_RenderCopy(m_renderer, m_scoreText, NULL, &textRect);
+    }
 
     // Update window
     SDL_RenderPresent(m_renderer);
@@ -215,6 +307,16 @@ void Game::Stop()
     // Free textures
     SDL_DestroyTexture(m_scoreText);
     m_scoreText = nullptr;
+    SDL_DestroyTexture(m_highScoreText);
+    m_highScoreText = nullptr;
+    SDL_DestroyTexture(m_scoreLabelText);
+    m_scoreLabelText = nullptr;
+    SDL_DestroyTexture(m_highScoreLabelText);
+    m_highScoreLabelText = nullptr;
+    SDL_DestroyTexture(m_gameOverText);
+    m_gameOverText = nullptr;
+    SDL_DestroyTexture(m_newHighScoreLabelText);
+    m_newHighScoreLabelText = nullptr;
 
     // Free sounds
     Mix_FreeChunk(m_eatSound);
@@ -320,9 +422,13 @@ void Game::GameOver()
 {
     Mix_PlayChannel( -1, m_dieSound, 0 );
 
-    //TODO Actual game over
-    SDL_Delay(500);
-    m_isRunning = false;
+    // If we have a new high score, save it.
+    if(m_score > m_highScore)
+    {
+        SaveHighScore();
+    }
+
+    m_gameOver = true;
 }
 
 SDL_Texture* Game::CreateText(const std::string& message, const std::string& path, SDL_Color color, int size)
@@ -354,4 +460,33 @@ SDL_Texture* Game::CreateText(const std::string& message, const std::string& pat
     TTF_CloseFont(font);
 
     return texture;
+}
+
+void Game::LoadHighScore()
+{
+    // TODO Make safe. Currently it will just accept ANY value in that file as a high score
+    std::ifstream scoreFile("res/highscore.txt");
+    if(scoreFile.is_open())
+    {
+        scoreFile >> m_highScore;
+        scoreFile.close();
+    }
+    else
+    {
+        std::cout << "Unable to open highscores.txt!" << std::endl;
+    }
+}
+
+void Game::SaveHighScore()
+{
+    std::ofstream scoreFile("res/highscore.txt");
+    if(scoreFile.is_open())
+    {
+        scoreFile << m_score << "\n";
+        scoreFile.close();
+    }
+    else
+    {
+        std::cout << "Unable to open highscores.txt!" << std::endl;
+    }
 }
