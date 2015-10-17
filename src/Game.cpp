@@ -16,6 +16,7 @@ Game::Game() :
     m_window(nullptr),
     m_renderer(nullptr),
     m_scoreText(nullptr),
+    m_eatSound(nullptr),
     m_score(0),
     m_snakeSpeed(1),
     m_snakeUpdateTime(500)
@@ -26,7 +27,7 @@ Game::Game() :
 void Game::Start()
 {
     // Initialize SDL
-    if(SDL_Init(SDL_INIT_VIDEO) < 0)
+    if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0)
     {
         std::cerr << "SDL could not initialize! SDL error: " << SDL_GetError() << std::endl;
     }
@@ -37,6 +38,11 @@ void Game::Start()
         std::cout << "SDL_ttf could not be initialized! SDL_ttf error: " << TTF_GetError() << std::endl;
     }
 
+    // Initialize SDL_mixer
+    if(Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0)
+    {
+        std::cout << "SDL_mixer could not be initialized! SDL_mixer error: " << Mix_GetError() << std::endl;
+    }
     // Create window
     m_window = SDL_CreateWindow(m_windowTitle.c_str(), SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, m_windowWidth, m_windowHeight, SDL_WINDOW_SHOWN);
     if(m_window == nullptr)
@@ -49,6 +55,13 @@ void Game::Start()
     if(m_renderer == nullptr)
     {
         std::cerr << "Renderer could not be created! SDL error: " << SDL_GetError() << std::endl;
+    }
+
+    // Load sound effect
+    m_eatSound = Mix_LoadWAV("res/eat.wav");
+    if(m_eatSound == nullptr)
+    {
+        std::cout << "Failed to load eat sound effect! SDL_mixer error: " << Mix_GetError() << std::endl;
     }
 
     // Create the snake
@@ -201,6 +214,10 @@ void Game::Stop()
     SDL_DestroyTexture(m_scoreText);
     m_scoreText = nullptr;
 
+    // Free sounds
+    Mix_FreeChunk(m_eatSound);
+    m_eatSound = nullptr;
+
     // Free SDL resources
     SDL_DestroyRenderer(m_renderer);
     SDL_DestroyWindow(m_window);
@@ -208,6 +225,8 @@ void Game::Stop()
     m_renderer = nullptr;
 
     SDL_Quit();
+    TTF_Quit();
+    Mix_Quit();
 }
 
 void Game::UpdateSnake()
@@ -255,6 +274,9 @@ void Game::CheckCollision()
 
 void Game::EatFood()
 {
+    // Play the eat sound
+    Mix_PlayChannel( -1, m_eatSound, 0 );
+
     m_score += 100;
     ResetFood();
     Grow();

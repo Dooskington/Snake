@@ -8,7 +8,7 @@ CC = g++
 SRC_PATH = src
 BIN_PATH = bin
 FRAMEWORK_PATH = /Library/Frameworks
-FRAMEWORKS = -framework SDL2 -framework SDL2_ttf
+FRAMEWORKS = -framework SDL2 -framework SDL2_ttf -framework SDL2_mixer
 BIN_NAME = snake
 C_FLAGS = -Wall -std=c++14
 SRC_FILES := $(wildcard $(SRC_PATH)/*.cpp)

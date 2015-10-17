@@ -18,9 +18,11 @@
 #if WINDOWS
     #include <SDL.h>
     #include <SDL_ttf.h>
+    #include <SDL_mixer.h>
 #else
     #include "SDL2/SDL.h"
     #include "SDL2_ttf/SDL_ttf.h"
+    #include "SDL2_mixer/SDL_mixer.h"
 #endif
 
 #include "SnakeSegment.hpp"
@@ -55,6 +57,7 @@ class Game
         SDL_Window* m_window;
         SDL_Renderer* m_renderer;
         SDL_Texture* m_scoreText;
+        Mix_Chunk* m_eatSound;
         int m_score;
         std::stringstream scoreString;
 
