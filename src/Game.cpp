@@ -7,14 +7,16 @@
 // TODO PCH
 #include "Game.hpp"
 
-Game::Game()
-: m_isRunning(true),
-  m_windowTitle("Snake"),
-  m_windowWidth(640),
-  m_windowHeight(480),
-  m_cellSize(16),
-  m_window(nullptr),
-  m_renderer(nullptr)
+Game::Game() :
+    m_isRunning(true),
+    m_windowTitle("Snake"),
+    m_windowWidth(640),
+    m_windowHeight(480),
+    m_cellSize(16),
+    m_snakeUpdateTime(200),
+    m_snakeSpeed(1),
+    m_window(nullptr),
+    m_renderer(nullptr)
 {
 
 }
@@ -42,7 +44,7 @@ void Game::Start()
     }
 
     // Initial snake
-    int startLength = 15;
+    int startLength = 3;
     for(int i = 0; i < startLength; i++)
     {
         Grow();
@@ -103,7 +105,7 @@ void Game::Update()
 
     // Move snake at an interval
     Uint32 currentTime = SDL_GetTicks();
-    if((currentTime - m_lastMoveTime) > 100)
+    if((currentTime - m_lastMoveTime) > m_snakeUpdateTime / m_snakeSpeed)
     {
         UpdateSnake();
 
@@ -163,6 +165,9 @@ void Game::Render()
 
 void Game::Stop()
 {
+    // Free snake
+    m_snakeSegments.clear();
+
     // Free SDL resources
     SDL_DestroyRenderer(m_renderer);
     SDL_DestroyWindow(m_window);
@@ -176,14 +181,22 @@ void Game::Grow()
 {
     // Allocate a new snake segment and add it to the end of the snake
     std::unique_ptr<SnakeSegment> seg(new SnakeSegment());
-    seg->m_x = (m_windowWidth / m_cellSize) / 2;
-    seg->m_y = (m_windowHeight / m_cellSize) / 2;
     if(m_snakeSegments.size() > 0)
     {
+        // Start it at the position of the head
         seg->m_x = m_snakeSegments[0]->m_x;
         seg->m_y = m_snakeSegments[0]->m_y;
     }
+    else
+    {
+        // This is the head; start it at the center.
+        seg->m_x = (m_windowWidth / m_cellSize) / 2;
+        seg->m_y = (m_windowHeight / m_cellSize) / 2;
+    }
     m_snakeSegments.push_back(std::move(seg));
+
+    // Speed up the snake
+    m_snakeSpeed++;
 }
 
 void Game::UpdateSnake()
@@ -198,12 +211,26 @@ void Game::UpdateSnake()
 
 void Game::CheckCollision()
 {
-    // Check and see if the head ran into any body parts
+    // Check and see if the head ran into anything
     std::vector< std::unique_ptr<SnakeSegment> >::const_iterator head = m_snakeSegments.begin();
     for(std::vector< std::unique_ptr<SnakeSegment> >::const_iterator it = head + 1; it != m_snakeSegments.end(); it++)
     {
         // If the body part is inside the head
         if((*it)->m_x == (*head)->m_x && (*it)->m_y == (*head)->m_y)
+        {
+            // The snake ran into itself. Game over.
+            m_isRunning = false;
+        }
+
+        // If the head runs into the left and right walls
+        if((*head)->m_x <= 0 || (*head)->m_x >= (m_windowWidth / m_cellSize))
+        {
+            // The snake ran into itself. Game over.
+            m_isRunning = false;
+        }
+
+        // If the head runs into the top and bottom walls
+        if((*head)->m_y <= 0 || (*head)->m_y >= (m_windowHeight / m_cellSize))
         {
             // The snake ran into itself. Game over.
             m_isRunning = false;

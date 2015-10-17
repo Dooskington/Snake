@@ -40,6 +40,8 @@ class Game
 
         // Snake
         std::vector< std::unique_ptr<SnakeSegment> > m_snakeSegments;
+        int m_snakeSpeed; // The speed modifier
+        int m_snakeUpdateTime; // The frequency, in milliseconds, to update the snake
         Uint32 m_lastMoveTime;
         Direction m_dir;
 };
