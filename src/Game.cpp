@@ -516,6 +516,7 @@ void Game::Restart()
 {
     m_dir = NONE;
     m_score = 0;
+    m_speed = 1;
 
     // Delete the snake
     m_snakeSegments.clear();
