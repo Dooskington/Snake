@@ -168,14 +168,16 @@ void Game::Render()
     // Render food
     SDL_Rect foodRect = {m_food->m_x * m_cellSize + 4, m_food->m_y * m_cellSize + 4, 8, 8};
     SDL_SetRenderDrawColor(m_renderer, 0, 255, 0, 255);
-    SDL_RenderDrawRect(m_renderer, &foodRect);
+    SDL_RenderFillRect(m_renderer, &foodRect);
+    //SDL_RenderDrawRect(m_renderer, &foodRect);
 
     // Render all snake segments
     for(std::vector< std::unique_ptr<SnakeSegment> >::iterator it = m_snakeSegments.begin(); it != m_snakeSegments.end(); it++)
     {
         SDL_Rect snakeRect = {(*it)->m_x * m_cellSize, (*it)->m_y * m_cellSize, 16, 16};
-        SDL_SetRenderDrawColor(m_renderer, 0, 200, 0, 255);
-        SDL_RenderDrawRect(m_renderer, &snakeRect);
+        SDL_SetRenderDrawColor(m_renderer, 0, 255, 0, 255);
+        SDL_RenderFillRect(m_renderer, &snakeRect);
+        //SDL_RenderDrawRect(m_renderer, &snakeRect);
     }
 
     // Render score text

@@ -10,6 +10,7 @@
 #include <vector>
 #include <memory>
 #include <string>
+#include <sstream>
 #include <time.h>
 #include <ctime>
 #include <stdlib.h>
