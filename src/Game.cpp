@@ -18,8 +18,8 @@ Game::Game() :
     m_scoreText(nullptr),
     m_eatSound(nullptr),
     m_score(0),
-    m_snakeSpeed(1),
-    m_snakeUpdateTime(500)
+    m_snakeSpeed(3),
+    m_snakeUpdateTime(300)
 {
 
 }
@@ -65,11 +65,7 @@ void Game::Start()
     }
 
     // Create the snake
-    int startLength = 3;
-    for(int i = 0; i < startLength; i++)
-    {
-        Grow();
-    }
+    Grow(3);
 
     // Create the food
     m_food = std::make_unique<Food>();
@@ -278,8 +274,9 @@ void Game::EatFood()
     Mix_PlayChannel( -1, m_eatSound, 0 );
 
     m_score += 100;
+    m_snakeSpeed++;
     ResetFood();
-    Grow();
+    Grow(3);
 }
 
 void Game::ResetFood()
@@ -289,26 +286,26 @@ void Game::ResetFood()
     m_food->m_y = std::rand() % ((m_windowHeight / m_cellSize) - 2) + 1;
 }
 
-void Game::Grow()
+void Game::Grow(int amount)
 {
-    // Allocate a new snake segment and add it to the end of the snake
-    std::unique_ptr<SnakeSegment> seg(new SnakeSegment());
-    if(m_snakeSegments.size() > 0)
+    for(int i = 0; i < amount; i++)
     {
-        // Start it at the position of the head
-        seg->m_x = m_snakeSegments[0]->m_x;
-        seg->m_y = m_snakeSegments[0]->m_y;
+        // Allocate a new snake segment and add it to the end of the snake
+        std::unique_ptr<SnakeSegment> seg(new SnakeSegment());
+        if(m_snakeSegments.size() > 0)
+        {
+            // Start it at the position of the head
+            seg->m_x = m_snakeSegments[0]->m_x;
+            seg->m_y = m_snakeSegments[0]->m_y;
+        }
+        else
+        {
+            // This is the head; start it at the center.
+            seg->m_x = (m_windowWidth / m_cellSize) / 2;
+            seg->m_y = (m_windowHeight / m_cellSize) / 2;
+        }
+        m_snakeSegments.push_back(std::move(seg));
     }
-    else
-    {
-        // This is the head; start it at the center.
-        seg->m_x = (m_windowWidth / m_cellSize) / 2;
-        seg->m_y = (m_windowHeight / m_cellSize) / 2;
-    }
-    m_snakeSegments.push_back(std::move(seg));
-
-    // Speed up the snake
-    m_snakeSpeed++;
 }
 
 SDL_Texture* Game::CreateText(const std::string& message, const std::string& path, SDL_Color color, int size)

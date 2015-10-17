@@ -42,7 +42,7 @@ class Game
         void CheckCollision();
         void EatFood();
         void ResetFood();
-        void Grow();
+        void Grow(int amount);
 
         SDL_Texture* CreateText(const std::string& message, const std::string& path, SDL_Color color, int size);
 
