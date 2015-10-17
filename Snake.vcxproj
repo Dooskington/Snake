@@ -19,15 +19,10 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\Food.hpp" />
-    <ClInclude Include="src\Game.hpp" />
-    <ClInclude Include="src\SnakeSegment.hpp" />
+    <ClInclude Include="src\*.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\Food.cpp" />
-    <ClCompile Include="src\Game.cpp" />
-    <ClCompile Include="src\Main.cpp" />
-    <ClCompile Include="src\SnakeSegment.cpp" />
+    <ClCompile Include="src\*.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
