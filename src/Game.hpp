@@ -9,7 +9,13 @@
 #include <iostream>
 #include <vector>
 #include <memory>
+
+#if WINDOWS
+#include <SDL.h>
+#else
 #include "SDL2/SDL.h"
+#endif
+
 #include "SnakeSegment.hpp"
 #include "Food.hpp"
 
