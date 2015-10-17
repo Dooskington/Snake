@@ -57,11 +57,17 @@ void Game::Start()
         std::cerr << "Renderer could not be created! SDL error: " << SDL_GetError() << std::endl;
     }
 
-    // Load sound effect
+    // Load sound effects
     m_eatSound = Mix_LoadWAV("res/eat.wav");
     if(m_eatSound == nullptr)
     {
         std::cout << "Failed to load eat sound effect! SDL_mixer error: " << Mix_GetError() << std::endl;
+    }
+
+    m_dieSound = Mix_LoadWAV("res/die.wav");
+    if(m_eatSound == nullptr)
+    {
+        std::cout << "Failed to load die sound effect! SDL_mixer error: " << Mix_GetError() << std::endl;
     }
 
     // Create the snake
@@ -213,6 +219,8 @@ void Game::Stop()
     // Free sounds
     Mix_FreeChunk(m_eatSound);
     m_eatSound = nullptr;
+    Mix_FreeChunk(m_dieSound);
+    m_dieSound = nullptr;
 
     // Free SDL resources
     SDL_DestroyRenderer(m_renderer);
@@ -245,20 +253,20 @@ void Game::CheckCollision()
         if((*it)->m_x == (*head)->m_x && (*it)->m_y == (*head)->m_y)
         {
             // The snake ran into itself. Game over.
-            m_isRunning = false;
+            GameOver();
         }
     }
 
     // If the head runs into the the edges
-    if((*head)->m_x <= 0 || (*head)->m_x >= (m_windowWidth / m_cellSize))
+    if((*head)->m_x < 0 || (*head)->m_x > (m_windowWidth / m_cellSize))
     {
         // The snake ran into the wall. Game over.
-        m_isRunning = false;
+        GameOver();
     }
-    else if ((*head)->m_y <= 0 || (*head)->m_y >= (m_windowHeight / m_cellSize))
+    else if ((*head)->m_y < 0 || (*head)->m_y > (m_windowHeight / m_cellSize))
     {
         // The snake ran into the wall. Game over.
-        m_isRunning = false;
+        GameOver();
     }
 
     // If the head runs into any food
@@ -306,6 +314,15 @@ void Game::Grow(int amount)
         }
         m_snakeSegments.push_back(std::move(seg));
     }
+}
+
+void Game::GameOver()
+{
+    Mix_PlayChannel( -1, m_dieSound, 0 );
+
+    //TODO Actual game over
+    SDL_Delay(500);
+    m_isRunning = false;
 }
 
 SDL_Texture* Game::CreateText(const std::string& message, const std::string& path, SDL_Color color, int size)

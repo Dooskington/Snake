@@ -43,6 +43,7 @@ class Game
         void EatFood();
         void ResetFood();
         void Grow(int amount);
+        void GameOver();
 
         SDL_Texture* CreateText(const std::string& message, const std::string& path, SDL_Color color, int size);
 
@@ -58,6 +59,7 @@ class Game
         SDL_Renderer* m_renderer;
         SDL_Texture* m_scoreText;
         Mix_Chunk* m_eatSound;
+        Mix_Chunk* m_dieSound;
         int m_score;
         std::stringstream scoreString;
 
