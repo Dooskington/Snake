@@ -28,5 +28,8 @@
 *.out
 *.app
 
+# Folders
+/bin
+
 # Other
 .DS_STORE

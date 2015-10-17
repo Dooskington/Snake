@@ -10,6 +10,7 @@
 #include <vector>
 #include <memory>
 #include <string>
+#include <sstream>
 #include <time.h>
 #include <stdlib.h>
 #include "SDL2/SDL.h"
