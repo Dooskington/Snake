@@ -21,6 +21,7 @@ Game::Game() :
     m_highScoreLabelText(nullptr),
     m_scoreLabelText(nullptr),
     m_newHighScoreLabelText(nullptr),
+    m_tryAgainLabelText(nullptr),
     m_eatSound(nullptr),
     m_score(0),
     m_highScore(0),
@@ -77,15 +78,11 @@ void Game::Start()
         std::cout << "Failed to load die sound effect! SDL_mixer error: " << Mix_GetError() << std::endl;
     }
 
-    // Create the snake
-    Grow(3);
-
     // Create the food
     m_food = std::make_unique<Food>();
-    ResetFood();
 
-    // Get the high score
-    LoadHighScore();
+    // Reset everything
+    Restart();
 
     // Game loop
     SDL_Event event;
@@ -109,36 +106,48 @@ void Game::Start()
 
 void Game::Update()
 {
+    // Get the key states
+    const Uint8* currentKeyStates = SDL_GetKeyboardState(NULL);
+
+    // bool to only allow one change in direction per "turn"
+    static bool canMove = true;
+
     if(!m_gameOver)
     {
-        // Snake input
-        const Uint8* currentKeyStates = SDL_GetKeyboardState(NULL);
-        if(currentKeyStates[SDL_SCANCODE_W] || currentKeyStates[SDL_SCANCODE_UP])
+        if(canMove)
         {
-            if(m_dir != SOUTH)
+            // Snake input
+            if(currentKeyStates[SDL_SCANCODE_W] || currentKeyStates[SDL_SCANCODE_UP])
             {
-                m_dir = NORTH;
+                if(m_dir != SOUTH)
+                {
+                    m_dir = NORTH;
+                    canMove = false;
+                }
             }
-        }
-        else if(currentKeyStates[SDL_SCANCODE_A] || currentKeyStates[SDL_SCANCODE_LEFT])
-        {
-            if(m_dir != EAST)
+            else if(currentKeyStates[SDL_SCANCODE_A] || currentKeyStates[SDL_SCANCODE_LEFT])
             {
-                m_dir = WEST;
+                if(m_dir != EAST)
+                {
+                    m_dir = WEST;
+                    canMove = false;
+                }
             }
-        }
-        else if(currentKeyStates[SDL_SCANCODE_S] || currentKeyStates[SDL_SCANCODE_DOWN])
-        {
-            if(m_dir != NORTH)
+            else if(currentKeyStates[SDL_SCANCODE_S] || currentKeyStates[SDL_SCANCODE_DOWN])
             {
-                m_dir = SOUTH;
+                if(m_dir != NORTH)
+                {
+                    m_dir = SOUTH;
+                    canMove = false;
+                }
             }
-        }
-        else if(currentKeyStates[SDL_SCANCODE_D] || currentKeyStates[SDL_SCANCODE_RIGHT])
-        {
-            if(m_dir != WEST)
+            else if(currentKeyStates[SDL_SCANCODE_D] || currentKeyStates[SDL_SCANCODE_RIGHT])
             {
-                m_dir = EAST;
+                if(m_dir != WEST)
+                {
+                    m_dir = EAST;
+                    canMove = false;
+                }
             }
         }
 
@@ -180,11 +189,15 @@ void Game::Update()
             }
 
             m_lastMoveTime = SDL_GetTicks();
+            canMove = true;
         }
     }
     else
     {
-
+        if(currentKeyStates[SDL_SCANCODE_R])
+        {
+            Restart();
+        }
     }
 }
 
@@ -236,6 +249,7 @@ void Game::Render()
         m_scoreLabelText = CreateText("Score", "res/dos.ttf", color, 22);
         m_highScoreLabelText = CreateText("High Score", "res/dos.ttf", color, 22);
         m_newHighScoreLabelText = CreateText("New High Score!", "res/dos.ttf", color, 40);
+        m_tryAgainLabelText = CreateText("Press 'R' to play again!", "res/dos.ttf", color, 18);
 
         scoreString.str("");
         scoreString << m_score;
@@ -293,6 +307,11 @@ void Game::Render()
         SDL_QueryTexture(m_scoreText, NULL, NULL, &w, &h);
         textRect = {(m_windowWidth / 2) - (w / 2), (m_windowHeight / 2) - (h * 2), w, h};
         SDL_RenderCopy(m_renderer, m_scoreText, NULL, &textRect);
+
+        // Try again label
+        SDL_QueryTexture(m_tryAgainLabelText, NULL, NULL, &w, &h);
+        textRect = {(m_windowWidth / 2) - (w / 2), (m_windowHeight - h) - (h/2), w, h};
+        SDL_RenderCopy(m_renderer, m_tryAgainLabelText, NULL, &textRect);
     }
 
     // Update window
@@ -317,6 +336,8 @@ void Game::Stop()
     m_gameOverText = nullptr;
     SDL_DestroyTexture(m_newHighScoreLabelText);
     m_newHighScoreLabelText = nullptr;
+    SDL_DestroyTexture(m_tryAgainLabelText);
+    m_tryAgainLabelText = nullptr;
 
     // Free sounds
     Mix_FreeChunk(m_eatSound);
@@ -489,4 +510,24 @@ void Game::SaveHighScore()
     {
         std::cout << "Unable to open highscores.txt!" << std::endl;
     }
+}
+
+void Game::Restart()
+{
+    m_dir = NONE;
+    m_score = 0;
+
+    // Delete the snake
+    m_snakeSegments.clear();
+
+    // Create the snake
+    Grow(3);
+
+    // Reset the food
+    ResetFood();
+
+    // Load the high score
+    LoadHighScore();
+
+    m_gameOver = false;
 }

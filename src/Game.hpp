@@ -47,6 +47,7 @@ class Game
         void GameOver();
         void LoadHighScore();
         void SaveHighScore();
+        void Restart();
 
         SDL_Texture* CreateText(const std::string& message, const std::string& path, SDL_Color color, int size);
 
@@ -66,6 +67,7 @@ class Game
         SDL_Texture* m_highScoreLabelText;
         SDL_Texture* m_scoreLabelText;
         SDL_Texture* m_newHighScoreLabelText;
+        SDL_Texture* m_tryAgainLabelText;
         Mix_Chunk* m_eatSound;
         Mix_Chunk* m_dieSound;
         int m_score;
