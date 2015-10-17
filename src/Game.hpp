@@ -12,9 +12,17 @@
 #include <string>
 #include <sstream>
 #include <time.h>
+#include <ctime>
 #include <stdlib.h>
-#include "SDL2/SDL.h"
-#include "SDL2_ttf/SDL_ttf.h"
+
+#if WINDOWS
+    #include <SDL.h>
+    #include <SDL_ttf.h>
+#else
+    #include "SDL2/SDL.h"
+    #include "SDL2_ttf/SDL_ttf.h"
+#endif
+
 #include "SnakeSegment.hpp"
 #include "Food.hpp"
 
