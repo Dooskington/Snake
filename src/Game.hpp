@@ -6,26 +6,8 @@
 
 #pragma once
 
-#include <iostream>
-#include <fstream>
-#include <vector>
-#include <memory>
-#include <string>
-#include <sstream>
-#include <time.h>
-#include <ctime>
-#include <stdlib.h>
-
-#if WINDOWS
-    #include <SDL.h>
-    #include <SDL_ttf.h>
-    #include <SDL_mixer.h>
-#else
-    #include "SDL2/SDL.h"
-    #include "SDL2_ttf/SDL_ttf.h"
-    #include "SDL2_mixer/SDL_mixer.h"
-#endif
-
+#include "PCH.hpp"
+#include "Snake.hpp"
 #include "SnakeSegment.hpp"
 #include "Food.hpp"
 
@@ -34,24 +16,30 @@ class Game
     public:
         Game();
 
+        SDL_Renderer* GetRenderer();
+        Mix_Chunk* GetEatSound();
+        Mix_Chunk* GetDieSound();
+        int GetScore();
+        int GetWindowWidth();
+        int GetWindowHeight();
+        int GetCellSize();
+        Food* GetFood();
+
+        void SetScore(int score);
+
         void Start();
         void Update();
         void Render();
         void Stop();
-
-        void UpdateSnake();
-        void CheckCollision();
-        void EatFood();
-        void ResetFood();
-        void Grow(int amount);
         void GameOver();
         void LoadHighScore();
         void SaveHighScore();
-        void Restart();
+        void ResetHighScore();
+        void NewGame();
 
         SDL_Texture* CreateText(const std::string& message, const std::string& path, SDL_Color color, int size);
 
-        enum Direction {NONE, NORTH, SOUTH, EAST, WEST};
+        enum GameState {PLAY, GAME_OVER};
 
     private:
         bool m_isRunning;
@@ -68,19 +56,18 @@ class Game
         SDL_Texture* m_scoreLabelText;
         SDL_Texture* m_newHighScoreLabelText;
         SDL_Texture* m_tryAgainLabelText;
+
+        // Sounds
         Mix_Chunk* m_eatSound;
         Mix_Chunk* m_dieSound;
+
         int m_score;
         int m_highScore;
         std::stringstream scoreString;
-        bool m_gameOver;
+        GameState m_state;
 
         // Snake
-        std::vector< std::unique_ptr<SnakeSegment> > m_snakeSegments;
-        int m_snakeSpeed; // The speed modifier
-        const int m_snakeUpdateTime; // The frequency, in milliseconds, to update the snake
-        Uint32 m_lastMoveTime;
-        Direction m_dir;
+        std::unique_ptr<Snake> m_snake;
 
         // Food
         std::unique_ptr<Food> m_food;
