@@ -16,11 +16,11 @@ Game::Game() :
     m_window(nullptr),
     m_renderer(nullptr),
     m_scoreText(nullptr),
-    m_highScoreText(nullptr),
-    m_gameOverText(nullptr),
-    m_highScoreLabelText(nullptr),
     m_scoreLabelText(nullptr),
+    m_highScoreText(nullptr),
+    m_highScoreLabelText(nullptr),
     m_newHighScoreLabelText(nullptr),
+    m_gameOverText(nullptr),
     m_tryAgainLabelText(nullptr),
     m_eatSound(nullptr),
     m_dieSound(nullptr),
@@ -129,6 +129,29 @@ void Game::Start()
     //ResetHighScore();
     NewGame();
 
+    // Create GUI objects
+    SDL_Color colorGreen = {0, 255, 0, 255};
+    m_scoreLabelText = std::make_unique<Texture>(this);
+    m_scoreLabelText->CreateTextureFromString("Score", "res/dos.ttf", colorGreen, 22);
+    m_scoreLabelText->SetX((m_windowWidth / 2) - (m_scoreLabelText->GetWidth() / 2));
+    m_scoreLabelText->SetY(128);
+    m_highScoreLabelText = std::make_unique<Texture>(this);
+    m_highScoreLabelText->CreateTextureFromString("High score", "res/dos.ttf", colorGreen, 22);
+    m_highScoreLabelText->SetX((m_windowWidth / 2) - (m_highScoreLabelText->GetWidth() / 2));
+    m_highScoreLabelText->SetY(200);
+    m_newHighScoreLabelText = std::make_unique<Texture>(this);
+    m_newHighScoreLabelText->CreateTextureFromString("New high score!", "res/dos.ttf", colorGreen, 40);
+    m_newHighScoreLabelText->SetX((m_windowWidth / 2) - (m_newHighScoreLabelText->GetWidth() / 2));
+    m_newHighScoreLabelText->SetY(228);
+    m_gameOverText = std::make_unique<Texture>(this);
+    m_gameOverText->CreateTextureFromString("Game over", "res/dos.ttf", colorGreen, 32);
+    m_gameOverText->SetX((m_windowWidth / 2) - (m_gameOverText->GetWidth() / 2));
+    m_gameOverText->SetY(8);
+    m_tryAgainLabelText = std::make_unique<Texture>(this);
+    m_tryAgainLabelText->CreateTextureFromString("Press 'R' to play again!", "res/dos.ttf", colorGreen, 18);
+    m_tryAgainLabelText->SetX((m_windowWidth / 2) - (m_tryAgainLabelText->GetWidth() / 2));
+    m_tryAgainLabelText->SetY((m_windowHeight - m_tryAgainLabelText->GetHeight()) - (m_tryAgainLabelText->GetHeight() / 2));
+
     // Game loop
     SDL_Event event;
     while(m_isRunning)
@@ -154,10 +177,32 @@ void Game::Update()
     // Get the key states
     const Uint8* currentKeyStates = SDL_GetKeyboardState(NULL);
 
-    m_snake->Update();
+    SDL_Color colorGreen = {0, 255, 0, 255};
 
-    if(m_state == GAME_OVER)
+    if(m_state == PLAY)
     {
+        // Update game elements
+        m_snake->Update();
+
+        // Update GUI
+        scoreString.str("");
+        scoreString << m_score;
+        m_scoreText->CreateTextureFromString(scoreString.str().c_str(), "res/dos.ttf", colorGreen, 22);
+        m_scoreText->SetX((m_windowWidth / 2) - (m_scoreText->GetWidth() / 2));
+        m_scoreText->SetY(8);
+    }
+    else if(m_state == GAME_OVER)
+    {
+        // Update GUI
+        m_scoreText->SetX((m_windowWidth / 2) - (m_scoreText->GetWidth() / 2));
+        m_scoreText->SetY(156);
+
+        scoreString.str("");
+        scoreString << m_highScore;
+        m_highScoreText->CreateTextureFromString(scoreString.str().c_str(), "res/dos.ttf", colorGreen, 22);
+        m_highScoreText->SetX((m_windowWidth / 2) - (m_highScoreText->GetWidth() / 2));
+        m_highScoreText->SetY(228);
+
         if(currentKeyStates[SDL_SCANCODE_R])
         {
             NewGame();
@@ -175,53 +220,25 @@ void Game::Render()
 
     if(m_state == PLAY)
     {
+        // Render game elements
         m_snake->Render();
         m_food->Render();
 
-        // Render score text
-        // Set rendering space and render to screen
-        scoreString.str("");
-        scoreString << m_score;
-        SDL_Color color = {0, 255, 0, 255};
-        m_scoreText = CreateText(scoreString.str().c_str(), "res/dos.ttf", color, 22);
-
-        int w, h;
-        SDL_QueryTexture(m_scoreText, NULL, NULL, &w, &h);
-        SDL_Rect textRect = {(m_windowWidth / 2) - (w / 2), 8, w, h};
-        SDL_RenderCopy(m_renderer, m_scoreText, NULL, &textRect);
+        // Render GUI
+        m_scoreText->Render();
     }
     else if (m_state == GAME_OVER)
     {
         // TODO Fix this awfulness.
         // Currently this just loads the font every frame and generates
         // textures every frame. This is extremely dumb and inefficient
+        m_scoreText->Render();
+        m_scoreLabelText->Render();
+        m_gameOverText->Render();
+        m_tryAgainLabelText->Render();
 
-        // Render game over window
-        SDL_Color color = {0, 255, 0, 255};
-
-        m_gameOverText = CreateText("Game Over", "res/dos.ttf", color, 32);
-        m_scoreLabelText = CreateText("Score", "res/dos.ttf", color, 22);
-        m_highScoreLabelText = CreateText("High Score", "res/dos.ttf", color, 22);
-        m_newHighScoreLabelText = CreateText("New High Score!", "res/dos.ttf", color, 40);
-        m_tryAgainLabelText = CreateText("Press 'R' to play again!", "res/dos.ttf", color, 18);
-
-        scoreString.str("");
-        scoreString << m_score;
-        m_scoreText = CreateText(scoreString.str().c_str(), "res/dos.ttf", color, 40);
-
-        scoreString.str("");
-        scoreString << m_highScore;
-        m_highScoreText = CreateText(scoreString.str().c_str(), "res/dos.ttf", color, 40);
-
-        int w, h;
-
-        // Game over text
-        SDL_QueryTexture(m_gameOverText, NULL, NULL, &w, &h);
-        SDL_Rect textRect = {(m_windowWidth / 2) - (w / 2), 8, w, h};
-        SDL_RenderCopy(m_renderer, m_gameOverText, NULL, &textRect);
-
-        // New high score label text
-        // TODO Fix this awful hacky flashing code
+        // TODO refactor this hacky code
+        // Flash the "New high score!" text
         static Uint32 lastFlash = 0;
         static bool flash = false;
         if(m_score > m_highScore)
@@ -234,55 +251,15 @@ void Game::Render()
 
             if(flash)
             {
-                SDL_QueryTexture(m_newHighScoreLabelText, NULL, NULL, &w, &h);
-                textRect = {(m_windowWidth / 2) - (w / 2), (m_windowHeight / 2), w, h};
-                SDL_RenderCopy(m_renderer, m_newHighScoreLabelText, NULL, &textRect);
+                m_newHighScoreLabelText->Render();
             }
         }
         else
         {
-            // High score label text
-            SDL_QueryTexture(m_highScoreLabelText, NULL, NULL, &w, &h);
-            textRect = {(m_windowWidth / 2) - (w / 2), (m_windowHeight / 2), w, h};
-            SDL_RenderCopy(m_renderer, m_highScoreLabelText, NULL, &textRect);
-
-            // High Score text
-            SDL_QueryTexture(m_highScoreText, NULL, NULL, &w, &h);
-            textRect = {(m_windowWidth / 2) - (w / 2), (m_windowHeight / 2) + (h), w, h};
-            SDL_RenderCopy(m_renderer, m_highScoreText, NULL, &textRect);
+            m_highScoreText->Render();
+            m_highScoreLabelText->Render();
         }
-
-        // Score label text
-        SDL_QueryTexture(m_scoreLabelText, NULL, NULL, &w, &h);
-        textRect = {(m_windowWidth / 2) - (w / 2), (m_windowHeight / 2) - (h * 5), w, h};
-        SDL_RenderCopy(m_renderer, m_scoreLabelText, NULL, &textRect);
-
-        // Score text
-        SDL_QueryTexture(m_scoreText, NULL, NULL, &w, &h);
-        textRect = {(m_windowWidth / 2) - (w / 2), (m_windowHeight / 2) - (h * 2), w, h};
-        SDL_RenderCopy(m_renderer, m_scoreText, NULL, &textRect);
-
-        // Try again label
-        SDL_QueryTexture(m_tryAgainLabelText, NULL, NULL, &w, &h);
-        textRect = {(m_windowWidth / 2) - (w / 2), (m_windowHeight - h) - (h/2), w, h};
-        SDL_RenderCopy(m_renderer, m_tryAgainLabelText, NULL, &textRect);
     }
-
-    // Temp fix for memory leak
-    SDL_DestroyTexture(m_scoreText);
-    m_scoreText = nullptr;
-    SDL_DestroyTexture(m_highScoreText);
-    m_highScoreText = nullptr;
-    SDL_DestroyTexture(m_scoreLabelText);
-    m_scoreLabelText = nullptr;
-    SDL_DestroyTexture(m_highScoreLabelText);
-    m_highScoreLabelText = nullptr;
-    SDL_DestroyTexture(m_gameOverText);
-    m_gameOverText = nullptr;
-    SDL_DestroyTexture(m_newHighScoreLabelText);
-    m_newHighScoreLabelText = nullptr;
-    SDL_DestroyTexture(m_tryAgainLabelText);
-    m_tryAgainLabelText = nullptr;
 
     // Update window
     SDL_RenderPresent(m_renderer);
@@ -290,22 +267,6 @@ void Game::Render()
 
 void Game::Stop()
 {
-    // Free textures
-    SDL_DestroyTexture(m_scoreText);
-    m_scoreText = nullptr;
-    SDL_DestroyTexture(m_highScoreText);
-    m_highScoreText = nullptr;
-    SDL_DestroyTexture(m_scoreLabelText);
-    m_scoreLabelText = nullptr;
-    SDL_DestroyTexture(m_highScoreLabelText);
-    m_highScoreLabelText = nullptr;
-    SDL_DestroyTexture(m_gameOverText);
-    m_gameOverText = nullptr;
-    SDL_DestroyTexture(m_newHighScoreLabelText);
-    m_newHighScoreLabelText = nullptr;
-    SDL_DestroyTexture(m_tryAgainLabelText);
-    m_tryAgainLabelText = nullptr;
-
     // Free sounds
     Mix_FreeChunk(m_eatSound);
     m_eatSound = nullptr;
@@ -332,37 +293,6 @@ void Game::GameOver()
     }
 
     m_state = GAME_OVER;
-}
-
-SDL_Texture* Game::CreateText(const std::string& message, const std::string& path, SDL_Color color, int size)
-{
-    SDL_Texture* texture;
-
-    // Open the font
-    TTF_Font* font = TTF_OpenFont(path.c_str(), size);
-    if(font == nullptr)
-    {
-        std::cout << "Failed to load font! SDL_ttf error: " << TTF_GetError() << std::endl;
-    }
-
-    // Render the text onto a surface, then load that surface into a texture.
-    SDL_Surface* surface = TTF_RenderText_Solid(font, message.c_str(), color);
-    if(surface == nullptr)
-    {
-        TTF_CloseFont(font);
-        std::cout << "Failed to render font to surface! SDL_ttf error: " << TTF_GetError() << std::endl;
-    }
-
-    texture = SDL_CreateTextureFromSurface(m_renderer, surface);
-    if(texture == nullptr)
-    {
-        std::cout << "Failed to create texture from surface! SDL error: " << SDL_GetError() << std::endl;
-    }
-
-    SDL_FreeSurface(surface);
-    TTF_CloseFont(font);
-
-    return texture;
 }
 
 void Game::LoadHighScore()
@@ -404,9 +334,10 @@ void Game::NewGame()
 {
     m_snake = std::make_unique<Snake>(this);
     m_food = std::make_unique<Food>(this);
+    m_scoreText = std::make_unique<Texture>(this);
+    m_highScoreText = std::make_unique<Texture>(this);
     m_score = 0;
 
-    // Load the high score
     LoadHighScore();
 
     m_state = PLAY;

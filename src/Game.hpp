@@ -10,6 +10,7 @@
 #include "Snake.hpp"
 #include "SnakeSegment.hpp"
 #include "Food.hpp"
+#include "Texture.hpp"
 
 class Game
 {
@@ -37,8 +38,6 @@ class Game
         void ResetHighScore();
         void NewGame();
 
-        SDL_Texture* CreateText(const std::string& message, const std::string& path, SDL_Color color, int size);
-
         enum GameState {PLAY, GAME_OVER};
 
     private:
@@ -49,13 +48,15 @@ class Game
         const int m_cellSize;
         SDL_Window* m_window;
         SDL_Renderer* m_renderer;
-        SDL_Texture* m_scoreText;
-        SDL_Texture* m_highScoreText;
-        SDL_Texture* m_gameOverText;
-        SDL_Texture* m_highScoreLabelText;
-        SDL_Texture* m_scoreLabelText;
-        SDL_Texture* m_newHighScoreLabelText;
-        SDL_Texture* m_tryAgainLabelText;
+
+        // Textures
+        std::unique_ptr<Texture> m_scoreText;
+        std::unique_ptr<Texture> m_scoreLabelText;
+        std::unique_ptr<Texture> m_highScoreText;
+        std::unique_ptr<Texture> m_highScoreLabelText;
+        std::unique_ptr<Texture> m_newHighScoreLabelText;
+        std::unique_ptr<Texture> m_gameOverText;
+        std::unique_ptr<Texture> m_tryAgainLabelText;
 
         // Sounds
         Mix_Chunk* m_eatSound;

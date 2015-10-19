@@ -8,6 +8,8 @@
 #include "Game.hpp"
 #include "Snake.hpp"
 
+// TODO The isAlive bool is probably redundant
+
 Snake::Snake(Game* game) :
     m_game(game),
     m_x(0),
