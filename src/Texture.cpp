@@ -5,6 +5,7 @@
 */
 
 #include "Texture.hpp"
+#include "PCH.hpp"
 #include "Game.hpp"
 
 Texture::Texture(Game* game) :
@@ -67,6 +68,10 @@ int Texture::GetHeight()
 
 void Texture::CreateTextureFromString(const std::string& text, const std::string& fontPath, SDL_Color color, int size)
 {
+    // Clear the current texture
+    SDL_DestroyTexture(m_texture);
+    m_texture = nullptr;
+
     // Open the font
     TTF_Font* font = TTF_OpenFont(fontPath.c_str(), size);
     if(font == nullptr)
