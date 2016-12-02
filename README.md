@@ -4,7 +4,7 @@ There's not much to say about this. It's a snake clone. It should run on just ab
 
 The makefile included is pretty much exclusively used to compile on Mac OSX. There is also a Visual Studio project included.
 
-![Snake](http://dooskington.com/static/images/previews/snake_preview.png)
+![Snake](http://declanhopkins.com/static/images/previews/snake_preview.png)
 
 Development began in October 2015.
 
