@@ -8,7 +8,7 @@ The makefile included is pretty much exclusively used to compile on Mac OSX. The
 
 Development began in October 2015.
 
-Special thanks to [TyranDe](https://github.com/TyrenDe) for moral support, code review, and Visual Studio compatibility.
+Special thanks to [TyrenDe](https://github.com/TyrenDe) for moral support, code review, and Visual Studio compatibility.
 
 Technology     | Purpose
 ---------------|----------
